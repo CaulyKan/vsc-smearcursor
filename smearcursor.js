@@ -75,7 +75,6 @@
 		return order_points([..._a, ..._b])
 	}
 
-
 	function lerp(a, b, t) {
 		return a + (b - a) * t
 	}
@@ -84,6 +83,17 @@
 		let opacity = 1
 		c.els.forEach(el => {
 			if (el.parentNode) {
+
+				const visible = el.checkVisibility({
+					visibilityProperty: true,
+					contentVisibilityAuto: true,
+				})
+
+				if (!visible) {
+					opacity = 0
+					return
+				}
+
 				opacity = Math.min(opacity, get_float_value(el.parentNode, "opacity"))
 			}
 		})

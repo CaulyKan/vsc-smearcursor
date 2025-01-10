@@ -11,7 +11,7 @@
 		"url": "https://github.com/yesitsfebreeze/vsc-smearcursor"
 	},
 	"icon": "images/logo.png",
-	"version": "1.0.1",
+	"version": "1.1.0",
 	"engines": {
 		"vscode": "^1.96.0"
 	},
@@ -37,23 +37,23 @@
 			"properties": {
 				"smearcursor.animation_time": {
 					"type": "number",
-					"default": "150",
+					"default": 150,
 					"description": "Animation Time"
 				},
 				"smearcursor.max_length": {
 					"type": "number",
-					"default": "99999",
+					"default": 99999,
 					"description": "Max trail length"
 				},
 				"smearcursor.tip_shrink": {
 					"type": "number",
-					"default": "0.6",
-					"description": "How much the cursor shrinks when moving"
+					"default": 0.6,
+					"description": "How much the cursor tip shrinks when moving"
 				},
 				"smearcursor.tail_shrink": {
 					"type": "number",
-					"default": "0.8",
-					"description": "How much the cursor shrinks when moving"
+					"default": 0.8,
+					"description": "How much the cursor tail shrinks when moving"
 				}
 			}
 		}
