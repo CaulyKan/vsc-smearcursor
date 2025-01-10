@@ -1,10 +1,10 @@
 
-\!\[exampele\]\(readme.gif\)
+\!\[exampele\]\(images/readme.gif\)
 
 
 ## Requirements
 
-This extensions makes use of (CustomCssJS)[https://marketplace.visualstudio.com/items?itemName=be5invis.vscode-custom-css].  
+This extensions makes use of [CustomCssJS](https://marketplace.visualstudio.com/items?itemName=be5invis.vscode-custom-css).  
 Make sure its installed.
 
 ## Extension Settings
@@ -30,7 +30,11 @@ This extension contributes the following settings:
 
 Users appreciate release notes as you update your extension.
 
-### 1.0.0
-
+### 0.0.1
 Initial release of SmearCursor
 
+### 1.0.0
+Added Logo and License
+
+### 1.0.1
+Fixed readme link...

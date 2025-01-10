@@ -10,7 +10,8 @@
 		"type": "git",
 		"url": "https://github.com/yesitsfebreeze/vsc-smearcursor"
 	},
-	"version": "0.0.1",
+	"icon": "images/logo.png",
+	"version": "1.0.1",
 	"engines": {
 		"vscode": "^1.96.0"
 	},
