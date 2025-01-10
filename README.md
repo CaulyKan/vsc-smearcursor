@@ -1,5 +1,4 @@
-
-\!\[exampele\]\(images/readme.gif\)
+![Showcase](images/readme.gif)
 
 
 ## Requirements
@@ -38,3 +37,6 @@ Added Logo and License
 
 ### 1.0.1
 Fixed readme link...
+
+### 1.0.2
+Fixed image...
