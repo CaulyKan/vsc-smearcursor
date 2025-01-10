@@ -19,7 +19,7 @@ This extension contributes the following settings:
 * `smearcursor.max_length`: Max trail length
 * `smearcursor.tip_shrink`: How much the cursor tip shrinks when moving
 * `smearcursor.tail_shrink`: How much the cursor tail shrinks when moving
-
+* `smearcursor.opacity`: How Transparent the cursor is when moving
 
 ## Installing
 
@@ -45,3 +45,6 @@ Initial release of SmearCursor
 
 ### 1.1.0
 Fixes
+
+### 1.1.2
+Adding move opacity

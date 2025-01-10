@@ -1,8 +1,9 @@
 {
 	const ANIMATION_TIME = "%<smearcursor.animation_time>%" || 150
 	const MAX_LENGTH = "%<smearcursor.max_length>%" || 9999999
-	const TIP_SHRINK = "%<smearcursor.tip_shrink>%" || 0.6
-	const TAIL_SHRINK = "%<smearcursor.tail_shrink>%" || 0.8
+	const TIP_SHRINK = Math.min(Math.max(0, "%<smearcursor.tip_shrink>%" || 0.6), 1)
+	const TAIL_SHRINK = Math.min(Math.max(0, "%<smearcursor.tail_shrink>%" || 0.8), 1)
+	const OPACITY = Math.min("%<smearcursor.opacity>%" + 0.0001 || 0.8, 1)
 
 	const ANIMATION_EASING = function (t) {
 		return -(Math.cos(Math.PI * t) - 1) / 2;
@@ -116,6 +117,7 @@
 
 		if (distance > 1) {
 			const t = ANIMATION_EASING(1 - percent)
+			opacity = lerp(OPACITY, 1, t)
 			const clamped_x = Math.min(MAX_LENGTH, distance) * dx / distance
 			const clamped_y = Math.min(MAX_LENGTH, distance) * dy / distance
 			c.src.x = c.pos.x + clamped_x
