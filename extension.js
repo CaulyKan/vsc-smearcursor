@@ -50,12 +50,14 @@ function disable(ctx, do_reload = true) {
 	let deleted = false
 	const to_delete = []
 	imports.forEach(f => {
+		if (f === null) return
 		if (f.includes("_" + FILENAME)) {
 			deleted = true
 			imports[imports.indexOf(f)] = null
 		}
 	});
 	imports = imports.filter(item => !!item);
+	imports = imports.filter(item => item !== null);
 
 	if (deleted === false) return false
 
