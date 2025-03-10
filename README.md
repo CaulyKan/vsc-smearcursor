@@ -48,3 +48,10 @@ Fixes
 
 ### 1.1.2
 Adding move opacity
+
+### 1.1.3
+Fixed null entry in settings
+
+### 1.1.4
+Fixed null entry in settings (again..)
+Added easing options

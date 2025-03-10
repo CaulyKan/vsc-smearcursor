@@ -11,11 +11,7 @@ function reload() {
 	}, 500);
 }
 
-function enable(ctx) {
-	const conf = vscode.workspace.getConfiguration()
-
-	disable(ctx, false)
-
+function create_script() {
 	const src = path.join(__dirname, FILENAME)
 	if (!fs.existsSync(src)) return;
 	const target = path.join(__dirname, "_" + FILENAME)
@@ -32,40 +28,46 @@ function enable(ctx) {
 	}
 
 	fs.writeFileSync(target, content)
+}
 
+function remove_script() {
+	const conf = vscode.workspace.getConfiguration()
+	let imports = conf.vscode_custom_css.imports
+
+	const new_imports = []
+	imports.forEach(f => {
+		if (f === null) return
+		if (f.includes("_" + FILENAME)) return;
+		new_imports.push(f)
+	});
+
+	conf.update(
+		"vscode_custom_css.imports",
+		new_imports,
+		vscode.ConfigurationTarget.Global
+	)
+}
+
+function insert_script() {
+	const conf = vscode.workspace.getConfiguration()
+	const target = path.join(__dirname, "_" + FILENAME)
 	conf.vscode_custom_css.imports.push(`file://${target}`)
 	conf.update(
 		"vscode_custom_css.imports",
 		conf.vscode_custom_css.imports,
 		vscode.ConfigurationTarget.Global
 	)
+}
 
+function enable(ctx) {
+	disable(ctx, false)
+	create_script()
+	insert_script()
 	reload()
 }
 
 function disable(ctx, do_reload = true) {
-	const conf = vscode.workspace.getConfiguration()
-	let imports = conf.vscode_custom_css.imports
-
-	let deleted = false
-	const to_delete = []
-	imports.forEach(f => {
-		if (f === null) return
-		if (f.includes("_" + FILENAME)) {
-			deleted = true
-			imports[imports.indexOf(f)] = null
-		}
-	});
-	imports = imports.filter(item => !!item);
-	imports = imports.filter(item => item !== null);
-
-	if (deleted === false) return false
-
-	conf.update(
-		"vscode_custom_css.imports",
-		imports,
-		vscode.ConfigurationTarget.Global
-	)
+	remove_script()
 	if (do_reload) reload()
 }
 

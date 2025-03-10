@@ -1,12 +1,62 @@
 {
 	const ANIMATION_TIME = "%<smearcursor.animation_time>%" || 150
+	const EASING = '"%<smearcursor.animation_easing>%"' || "linear"
 	const MAX_LENGTH = "%<smearcursor.max_length>%" || 9999999
 	const TIP_SHRINK = Math.min(Math.max(0, "%<smearcursor.tip_shrink>%" || 0.6), 1)
 	const TAIL_SHRINK = Math.min(Math.max(0, "%<smearcursor.tail_shrink>%" || 0.8), 1)
 	const OPACITY = Math.min("%<smearcursor.opacity>%" + 0.0001 || 0.8, 1)
 
-	const ANIMATION_EASING = function (t) {
-		return -(Math.cos(Math.PI * t) - 1) / 2;
+	pow = Math.pow;
+	sqrt = Math.sqrt;
+	sin = Math.sin;
+	cos = Math.cos;
+	PI = Math.PI;
+	c1 = 1.70158;
+	c2 = c1 * 1.525;
+	c3 = c1 + 1;
+	c4 = (2 * PI) / 3;
+	c5 = (2 * PI) / 4.5;
+
+	easings = {
+		'linear': (x) => x,
+		'quad': (x) => {
+			return x < 0.5 ? 2 * x * x : 1 - pow(-2 * x + 2, 2) / 2;
+		},
+		'cubic': (x) => {
+			return x < 0.5 ? 4 * x * x * x : 1 - pow(-2 * x + 2, 3) / 2;
+		},
+		'quart': (x) => {
+			return x < 0.5 ? 8 * x * x * x * x : 1 - pow(-2 * x + 2, 4) / 2;
+		},
+		'quint': (x) => {
+			return x < 0.5 ? 16 * x * x * x * x * x : 1 - pow(-2 * x + 2, 5) / 2;
+		},
+		'sine': (x) => {
+			return -(cos(PI * x) - 1) / 2;
+		},
+		'expo': (x) => {
+			return x === 0
+				? 0
+				: x === 1
+					? 1
+					: x < 0.5
+						? pow(2, 20 * x - 10) / 2
+						: (2 - pow(2, -20 * x + 10)) / 2;
+		},
+		'circ': (x) => {
+			return x < 0.5
+				? (1 - sqrt(1 - pow(2 * x, 2))) / 2
+				: (sqrt(1 - pow(-2 * x + 2, 2)) + 1) / 2;
+		},
+		'back': (x) => {
+			return x < 0.5
+				? (pow(2 * x, 2) * ((c2 + 1) * 2 * x - c2)) / 2
+				: (pow(2 * x - 2, 2) * ((c2 + 1) * (x * 2 - 2) + c2) + 2) / 2;
+		},
+	}
+
+	const get_easing = function (t) {
+		return easings[EASING](t)
 	}
 
 	function overlaps(a, b) {
@@ -116,7 +166,7 @@
 		]
 
 		if (distance > 1) {
-			const t = ANIMATION_EASING(1 - percent)
+			const t = get_easing(1 - percent)
 			opacity = lerp(OPACITY, 1, t)
 			const clamped_x = Math.min(MAX_LENGTH, distance) * dx / distance
 			const clamped_y = Math.min(MAX_LENGTH, distance) * dy / distance

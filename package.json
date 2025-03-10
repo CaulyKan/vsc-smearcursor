@@ -11,7 +11,7 @@
 		"url": "https://github.com/yesitsfebreeze/vsc-smearcursor"
 	},
 	"icon": "images/logo.png",
-	"version": "1.1.2",
+	"version": "1.1.4",
 	"engines": {
 		"vscode": "^1.96.0"
 	},
@@ -26,7 +26,7 @@
 		"commands": [
 			{
 				"command": "smearcursor.enable",
-				"title": "Smearcursor: Enable"
+				"title": "Smearcursor: Enable/Update"
 			},
 			{
 				"command": "smearcursor.disable",
@@ -39,6 +39,35 @@
 					"type": "number",
 					"default": 150,
 					"description": "Animation Time"
+				},
+				"smearcursor.animation_easing": {
+					"type": "string",
+					"default": "linear",
+					"description": "Type of easing function used for the cursor animation.",
+					"enum": [
+						"linear",
+						"quad",
+						"cubic",
+						"quart",
+						"quint",
+						"sine",
+						"expo",
+						"circ",
+						"back"
+					],
+					"enumDescriptions": [
+						"No easing, constant speed.",
+						"Starts slow and accelerates (quadratic).",
+						"Starts even slower and accelerates more smoothly (cubic).",
+						"Starts very slow and accelerates strongly (quartic).",
+						"Starts extremely slow and accelerates rapidly (quintic).",
+						"Smooth, sine wave-like easing.",
+						"Exponential acceleration and deceleration.",
+						"Circular easing, creating a natural motion effect.",
+						"Moves slightly backward before accelerating forward.",
+						"Spring-like motion with elasticity.",
+						"Bouncy, rubber-like easing effect."
+					]
 				},
 				"smearcursor.max_length": {
 					"type": "number",
