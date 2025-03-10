@@ -56,3 +56,6 @@ Fixed null entry in settings
 ### 1.1.4
 Fixed null entry in settings (again..)
 Added easing options
+
+### 1.1.5
+Republish for README
