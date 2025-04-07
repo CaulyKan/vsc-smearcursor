@@ -30,7 +30,7 @@ function create_script() {
 	fs.writeFileSync(target, content)
 }
 
-function remove_script() {
+function update_imports(just_delete = false) {
 	const conf = vscode.workspace.getConfiguration()
 	let imports = conf.vscode_custom_css.imports
 
@@ -41,6 +41,11 @@ function remove_script() {
 		new_imports.push(f)
 	});
 
+	if (!just_delete) {
+		const target = path.join(__dirname, "_" + FILENAME)
+		new_imports.push(`file://${target}`)
+	}
+
 	conf.update(
 		"vscode_custom_css.imports",
 		new_imports,
@@ -48,26 +53,15 @@ function remove_script() {
 	)
 }
 
-function insert_script() {
-	const conf = vscode.workspace.getConfiguration()
-	const target = path.join(__dirname, "_" + FILENAME)
-	conf.vscode_custom_css.imports.push(`file://${target}`)
-	conf.update(
-		"vscode_custom_css.imports",
-		conf.vscode_custom_css.imports,
-		vscode.ConfigurationTarget.Global
-	)
-}
-
 function enable(ctx) {
 	disable(ctx, false)
 	create_script()
-	insert_script()
+	update_imports(false)
 	reload()
 }
 
 function disable(ctx, do_reload = true) {
-	remove_script()
+	update_imports(true)
 	if (do_reload) reload()
 }
 

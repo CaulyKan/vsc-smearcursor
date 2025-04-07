@@ -59,3 +59,11 @@ Added easing options
 
 ### 1.1.5
 Republish for README
+
+### 1.1.6
+Fix a woopsie doopsie
+
+### 1.2.0
+Removed opacity (buggy and not really nice to look at)
+Added more sensible defaults
+Only skew cursor when moving diagonally

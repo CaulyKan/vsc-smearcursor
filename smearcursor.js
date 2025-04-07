@@ -4,7 +4,6 @@
 	const MAX_LENGTH = "%<smearcursor.max_length>%" || 9999999
 	const TIP_SHRINK = Math.min(Math.max(0, "%<smearcursor.tip_shrink>%" || 0.6), 1)
 	const TAIL_SHRINK = Math.min(Math.max(0, "%<smearcursor.tail_shrink>%" || 0.8), 1)
-	const OPACITY = Math.min("%<smearcursor.opacity>%" + 0.0001 || 0.8, 1)
 
 	pow = Math.pow;
 	sqrt = Math.sqrt;
@@ -114,40 +113,32 @@
 	}
 
 	function get_points(a, b) {
-		const centerA = { x: (a.tl.x + a.br.x) / 2, y: (a.tl.y + a.br.y) / 2 }
-		const centerB = { x: (b.tl.x + b.br.x) / 2, y: (b.tl.y + b.br.y) / 2 }
+		const ca = { x: (a[0].x + a[2].x) / 2, y: (a[0].y + a[2].y) / 2 }
+		const cb = { x: (b[0].x + b[2].x) / 2, y: (b[0].y + b[2].y) / 2 }
+		const fa = farthest_points(ca, b)
+		const fb = farthest_points(cb, a)
+		return order_points([...fa, ...fb])
+	}
 
-		const pointsA = [a.tl, a.tr, a.br, a.bl]
-		const pointsB = [b.tl, b.tr, b.br, b.bl]
+	function get_dir(a,b) {
+		const ca = { x: (a[0].x + a[2].x) / 2, y: (a[0].y + a[2].y) / 2 }
+		const cb = { x: (b[0].x + b[2].x) / 2, y: (b[0].y + b[2].y) / 2 }
+		const dir = { x: cb.x - ca.x, y: cb.y - ca.y }
+		const len = Math.sqrt(dir.x * dir.x + dir.y * dir.y)
+		if (len === 0) return { x: 0, y: 0 }
+		const normalized = { x: dir.x / len, y: dir.y / len }
+		return normalized
+	}
 
-		const _a = farthest_points(centerA, pointsB)
-		const _b = farthest_points(centerB, pointsA)
-
-		return order_points([..._a, ..._b])
+	function get_dist(pa,pb) {
+		return Math.sqrt((pa.x - pb.x) ** 2 + (pa.y - pb.y) ** 2)
 	}
 
 	function lerp(a, b, t) {
 		return a + (b - a) * t
 	}
 
-	function draw(c, ctx, ctr, delta) {
-		let opacity = 1
-		c.els.forEach(el => {
-			if (el.parentNode) {
-
-				const visible = el.checkVisibility({
-					visibilityProperty: true,
-					contentVisibilityAuto: true,
-				})
-
-				if (!visible) {
-					opacity = 0
-					return
-				}
-
-				opacity = Math.min(opacity, get_float_value(el.parentNode, "opacity"))
-			}
-		})
+	function smear(c, delta) {
 		c.time -= delta
 		c.time = Math.max(c.time, 0)
 		const percent = c.time / ANIMATION_TIME
@@ -167,44 +158,57 @@
 
 		if (distance > 1) {
 			const t = get_easing(1 - percent)
-			opacity = lerp(OPACITY, 1, t)
+
 			const clamped_x = Math.min(MAX_LENGTH, distance) * dx / distance
 			const clamped_y = Math.min(MAX_LENGTH, distance) * dy / distance
-			c.src.x = c.pos.x + clamped_x
-			c.src.y = c.pos.y + clamped_y
 
-			c.smear.x = lerp(c.src.x, c.pos.x, t)
-			c.smear.y = lerp(c.src.y, c.pos.y, t)
+			c.src = {
+				x: c.pos.x + clamped_x,
+				y: c.pos.y + clamped_y
+			}
+			c.smear = {
+				x:lerp(c.src.x, c.pos.x, t),
+				y:lerp(c.src.y, c.pos.y, t)
+			}
+			
+			function get_rect(x,y,w,h,sx,sy) {
+				return [
+					{ x: x + sx, y: y + sy },
+					{ x: x + w - sx, y: y + sy },
+					{ x: x + w - sx, y: y + h - sy },
+					{ x: x + sx, y: y + h - sy },
+				]
+			}
 
 			let tip_x_inset = lerp(w / 2 - w / 2 * TIP_SHRINK, 0, t)
 			let tip_y_inset = lerp(h / 2 - h / 2 * TIP_SHRINK, 0, t)
-			let trail_x_inset = lerp(w / 2 - w / 2 * TAIL_SHRINK, 0, t)
-			let trail_y_inset = lerp(h / 2 - h / 2 * TAIL_SHRINK, 0, t)
+			let tail_x_inset = lerp(w / 2 - w / 2 * TAIL_SHRINK, 0, t)
+			let tail_y_inset = lerp(h / 2 - h / 2 * TAIL_SHRINK, 0, t)
 
-			const tip_rect = {
-				tl: { x: c.pos.x + tip_x_inset, y: c.pos.y + tip_y_inset },
-				tr: { x: c.pos.x + w - tip_x_inset, y: c.pos.y + tip_y_inset },
-				br: { x: c.pos.x + w - tip_x_inset, y: c.pos.y + h - tip_y_inset },
-				bl: { x: c.pos.x + tip_x_inset, y: c.pos.y + h - tip_y_inset },
+			let tip = get_rect(c.pos.x, c.pos.y, w, h, 0, 0)
+			let tail = get_rect(c.smear.x, c.smear.y, w, h, 0, 0)
+			
+			points = get_points(tip, tail)
+			const dir = get_dir(tail,tip)
+			if (dir.x !== 0 && dir.y !== 0) {
+				tip = get_rect(c.pos.x, c.pos.y, w, h, tip_x_inset, tip_y_inset)
+				tail = get_rect(c.smear.x, c.smear.y, w, h, tail_x_inset, tail_y_inset)
+				points = get_points(tip, tail)
 			}
-
-			const trail_rect = {
-				tl: { x: c.smear.x + trail_x_inset, y: c.smear.y + trail_y_inset },
-				tr: { x: c.smear.x + w - trail_x_inset, y: c.smear.y + trail_y_inset },
-				br: { x: c.smear.x + w - trail_x_inset, y: c.smear.y + h - trail_y_inset },
-				bl: { x: c.smear.x + trail_x_inset, y: c.smear.y + h - trail_y_inset },
-			}
-
-			points = get_points(tip_rect, trail_rect)
+			
 			if (t == 1) {
 				c.src = Object.assign({}, c.pos)
 				c.smear = Object.assign({}, c.pos)
 			}
 		}
+		return points
+	}
 
+	function draw(c, ctx, ctr, delta) {
+		points = smear(c, delta)
+		
 		ctx.save()
 		ctx.fillStyle = c.background
-		ctx.globalAlpha = opacity
 
 		ctx.beginPath()
 		ctx.moveTo(points[0].x, points[0].y)
@@ -227,7 +231,6 @@
 			clone.style.position = "fixed"
 			clone.style.zIndex = 2
 			clone.style.color = c.color
-			clone.style.opacity = opacity
 			ctr.appendChild(clone)
 		})
 	}
