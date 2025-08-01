@@ -4,6 +4,7 @@
 	const MAX_LENGTH = "%<smearcursor.max_length>%" || 9999999
 	const TIP_SHRINK = Math.min(Math.max(0, "%<smearcursor.tip_shrink>%" || 0.6), 1)
 	const TAIL_SHRINK = Math.min(Math.max(0, "%<smearcursor.tail_shrink>%" || 0.8), 1)
+	const DISABLE_WHEN_SELECTING = "%<smearcursor.disable_when_selecting>%" || false
 
 	pow = Math.pow;
 	sqrt = Math.sqrt;
@@ -120,7 +121,7 @@
 		return order_points([...fa, ...fb])
 	}
 
-	function get_dir(a,b) {
+	function get_dir(a, b) {
 		const ca = { x: (a[0].x + a[2].x) / 2, y: (a[0].y + a[2].y) / 2 }
 		const cb = { x: (b[0].x + b[2].x) / 2, y: (b[0].y + b[2].y) / 2 }
 		const dir = { x: cb.x - ca.x, y: cb.y - ca.y }
@@ -130,7 +131,7 @@
 		return normalized
 	}
 
-	function get_dist(pa,pb) {
+	function get_dist(pa, pb) {
 		return Math.sqrt((pa.x - pb.x) ** 2 + (pa.y - pb.y) ** 2)
 	}
 
@@ -167,11 +168,11 @@
 				y: c.pos.y + clamped_y
 			}
 			c.smear = {
-				x:lerp(c.src.x, c.pos.x, t),
-				y:lerp(c.src.y, c.pos.y, t)
+				x: lerp(c.src.x, c.pos.x, t),
+				y: lerp(c.src.y, c.pos.y, t)
 			}
-			
-			function get_rect(x,y,w,h,sx,sy) {
+
+			function get_rect(x, y, w, h, sx, sy) {
 				return [
 					{ x: x + sx, y: y + sy },
 					{ x: x + w - sx, y: y + sy },
@@ -187,15 +188,15 @@
 
 			let tip = get_rect(c.pos.x, c.pos.y, w, h, 0, 0)
 			let tail = get_rect(c.smear.x, c.smear.y, w, h, 0, 0)
-			
+
 			points = get_points(tip, tail)
-			const dir = get_dir(tail,tip)
+			const dir = get_dir(tail, tip)
 			if (dir.x !== 0 && dir.y !== 0) {
 				tip = get_rect(c.pos.x, c.pos.y, w, h, tip_x_inset, tip_y_inset)
 				tail = get_rect(c.smear.x, c.smear.y, w, h, tail_x_inset, tail_y_inset)
 				points = get_points(tip, tail)
 			}
-			
+
 			if (t == 1) {
 				c.src = Object.assign({}, c.pos)
 				c.smear = Object.assign({}, c.pos)
@@ -206,7 +207,7 @@
 
 	function draw(c, ctx, ctr, delta) {
 		points = smear(c, delta)
-		
+
 		ctx.save()
 		ctx.fillStyle = c.background
 
@@ -334,6 +335,11 @@
 				editor = document.querySelector(".part.editor")
 				if (editor === null) return rr(stamp)
 				const { ctx, ctr } = create_elements(editor)
+
+				if (DISABLE_WHEN_SELECTING && document.getElementsByClassName("selected-text").length > 0) {
+					ctx.clearRect(0, 0, ctx.canvas.clientWidth, ctx.canvas.clientHeight)
+					return rr(stamp)
+				}
 
 				const cursors = Array.from(editor.getElementsByClassName("cursor"))
 
