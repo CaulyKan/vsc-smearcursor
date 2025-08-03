@@ -108,9 +108,9 @@
 		},
 		"__metadata": {
 			"size": 26549349
-		},
-		"extensionKind": [
-			"ui"
-		]
-	}
+		}
+	},
+	"extensionKind": [
+		"ui"
+	]
 }
