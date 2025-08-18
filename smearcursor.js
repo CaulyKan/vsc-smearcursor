@@ -6,6 +6,7 @@
 	const TAIL_SHRINK = Math.min(Math.max(0, "%<smearcursor.tail_shrink>%" || 0.8), 1)
 	const DISABLE_WHEN_SELECTING = "%<smearcursor.disable_when_selecting>%" || false
 	const DISCARD_ANIM_COUNT = 1
+	const BLINK_INTERVAL = 530; // VSCode default blink interval in ms
 
 	pow = Math.pow;
 	sqrt = Math.sqrt;
@@ -55,7 +56,6 @@
 				: (pow(2 * x - 2, 2) * ((c2 + 1) * (x * 2 - 2) + c2) + 2) / 2;
 		},
 	}
-
 	const get_easing = function (t) {
 		return easings[EASING](t)
 	}
@@ -204,7 +204,7 @@
 		return points
 	}
 
-	function draw(c, ctx, ctr, delta, cursor) {
+	function draw(c, ctx, ctr, stamp, delta, cursor) {
 		const points = smear(c, delta)
 
 		ctx.save()
@@ -216,7 +216,8 @@
 		ctx.closePath()
 		ctx.fill()
 		ctx.restore()
-
+		
+   		// const opacity = 0.5 + 0.5 * sin(stamp*PI/(1000*BLINK_INTERVAL));
 		c.els.forEach(el => {
 			if (!el.parentNode) return
 			if (!el.parentNode.classList.contains("cursor-block-style")) return
@@ -228,6 +229,9 @@
 			clone.style.zIndex = 2
 			clone.style.color = c.color
 			ctr.appendChild(clone)
+			
+			// el.style.opacity = opacity
+			// clone.style.opacity = opacity
 		})
 
 		// ctx.save()
@@ -357,7 +361,7 @@
 						return
 					}
 
-					draw(c, ctx, ctr, delta, cursor)
+					draw(c, ctx, ctr, stamp, delta, cursor)
 				})
 
 				rr(stamp)
