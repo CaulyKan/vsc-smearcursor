@@ -5,6 +5,7 @@
 	const TIP_SHRINK = Math.min(Math.max(0, "%<smearcursor.tip_shrink>%" || 0.6), 1)
 	const TAIL_SHRINK = Math.min(Math.max(0, "%<smearcursor.tail_shrink>%" || 0.8), 1)
 	const DISABLE_WHEN_SELECTING = "%<smearcursor.disable_when_selecting>%" || false
+	const DISCARD_ANIM_COUNT = 1
 
 	pow = Math.pow;
 	sqrt = Math.sqrt;
@@ -138,16 +139,15 @@
 	function lerp(a, b, t) {
 		return a + (b - a) * t
 	}
+	let active_cursors = new WeakMap()
 
 	function smear(c, delta) {
 		c.time -= delta
 		c.time = Math.max(c.time, 0)
 		const percent = c.time / ANIMATION_TIME
 
-		const w = c.size.x
-		const h = c.size.y
-		const dx = c.src.x - c.pos.x
-		const dy = c.src.y - c.pos.y
+		const w = c.size.x, h = c.size.y
+		const dx = c.src.x - c.pos.x, dy = c.src.y - c.pos.y
 		const distance = Math.sqrt(dx * dx + dy * dy) || 1
 
 		let points = [
@@ -159,7 +159,6 @@
 
 		if (distance > 1) {
 			const t = get_easing(1 - percent)
-
 			const clamped_x = Math.min(MAX_LENGTH, distance) * dx / distance
 			const clamped_y = Math.min(MAX_LENGTH, distance) * dy / distance
 
@@ -205,19 +204,15 @@
 		return points
 	}
 
-	function draw(c, ctx, ctr, delta) {
-		points = smear(c, delta)
+	function draw(c, ctx, ctr, delta, cursor) {
+		const points = smear(c, delta)
 
 		ctx.save()
 		ctx.fillStyle = c.background
 
 		ctx.beginPath()
 		ctx.moveTo(points[0].x, points[0].y)
-
-		for (let i = 1; i < points.length; i++) {
-			ctx.lineTo(points[i].x, points[i].y)
-		}
-
+		for (let i = 1; i < points.length; i++) ctx.lineTo(points[i].x, points[i].y)
 		ctx.closePath()
 		ctx.fill()
 		ctx.restore()
@@ -234,48 +229,58 @@
 			clone.style.color = c.color
 			ctr.appendChild(clone)
 		})
+
+		// ctx.save()
+		// ctx.fillStyle = "white"
+		// ctx.font = "12px monospace"
+		// ctx.fillText(c.anim_count, c.pos.x, c.pos.y - 4)
+		// ctx.restore()
 	}
 
-	function get_float_value(el, property) {
-		return parseFloat(getComputedStyle(el).getPropertyValue(property).replace("px", ""))
-	}
-
-	function assign(cursor, idx) {
+	function assign(cursor) {
 		cursor.style.backgroundColor = "transparent"
 
-		if (!validate(cursor)) return
-
-		const c = active_cursors[idx] || {}
+		let is_new = !active_cursors.has(cursor);
+		let c = active_cursors.get(cursor) || {}
 		const cp = cursor.getBoundingClientRect()
+		const cr = cursor.parentNode.getBoundingClientRect()
 
 		c.pos = { x: cp.left, y: cp.top }
 		c.size = { x: cursor.offsetWidth, y: cursor.offsetHeight }
-		c.background = getComputedStyle(
-			document.querySelector("body>.monaco-workbench"))
-			.getPropertyValue("--vscode-editorCursor-foreground")
-			.trim()
-		c.color = getComputedStyle(
-			document.querySelector("body>.monaco-workbench"))
-			.getPropertyValue("--vscode-editorCursor-background")
-			.trim()
+		c.background = getComputedStyle(document.querySelector("body>.monaco-workbench"))
+			.getPropertyValue("--vscode-editorCursor-foreground").trim()
+		c.color = getComputedStyle(document.querySelector("body>.monaco-workbench"))
+			.getPropertyValue("--vscode-editorCursor-background").trim()
+
 		c.last_pos = c.last_pos || Object.assign({}, c.pos)
 		c.smear = c.smear || Object.assign({}, c.pos)
 		c.src = c.src || Object.assign({}, c.pos)
 		c.time = c.time || 0
-		c.els = []
-		if (!c.els.includes(cursor)) {
-			c.els.push(cursor)
+		c.els = c.els || []
+		c.anim_count = c.anim_count || 0
+		if (!c.els.includes(cursor)) c.els.push(cursor)
+
+		if (!validate(cursor)) {
+			c.anim_count = 0
 		}
 
-		if (c.last_pos.x !== cp.left || c.last_pos.y !== cp.top) {
-			c.time = ANIMATION_TIME
-			c.smear = Object.assign({}, c.last_pos)
-			c.src = Object.assign({}, c.last_pos)
-			c.last_pos = Object.assign({}, c.pos)
+		if ((c.last_pos.x !== cp.left || c.last_pos.y !== cp.top)) {
+			c.anim_count++
+			c.anim_count = Math.min(c.anim_count, DISCARD_ANIM_COUNT + 1);
+			if (c.anim_count > DISCARD_ANIM_COUNT) {
+				c.time = ANIMATION_TIME
+				c.smear = Object.assign({}, c.last_pos)
+				c.src = Object.assign({}, c.last_pos)
+				c.last_pos = Object.assign({}, c.pos)
+			} else {
+				c.time = 0
+				c.smear = Object.assign({}, c.pos)
+				c.src = Object.assign({}, c.pos)
+				c.last_pos = Object.assign({}, c.pos)
+			}
 		}
-		active_cursors[idx] = c
+		active_cursors.set(cursor, c)
 	}
-
 
 	function create_elements(editor) {
 		const container = document.querySelector(".monaco-grid-view")
@@ -317,23 +322,19 @@
 		return { ctx, ctr }
 	}
 
-	const anim = requestAnimationFrame || (callback => setTimeout(callback, 1000 / 60))
-	let active_cursors = []
-	async function run() {
-		let editor
-		let last
-		let delta
+	const anim = requestAnimationFrame || (cb => setTimeout(cb, 1000 / 60))
 
-		function rr(stamp) {
-			last = stamp
-			anim(step)
-		}
+	async function run() {
+		let editor, last, delta
+
+		function rr(stamp) { last = stamp; anim(step) }
 
 		function step(stamp) {
 			try {
 				delta = (stamp - last)
 				editor = document.querySelector(".part.editor")
 				if (editor === null) return rr(stamp)
+
 				const { ctx, ctr } = create_elements(editor)
 
 				if (DISABLE_WHEN_SELECTING && document.getElementsByClassName("selected-text").length > 0) {
@@ -344,23 +345,19 @@
 				const cursors = Array.from(editor.getElementsByClassName("cursor"))
 
 				if (cursors.length === 0) return rr(stamp)
-				let idx = 0
+
+				cursors.forEach(cursor => assign(cursor))
 
 				cursors.forEach(cursor => {
-					if (cursor.classList.contains("cursor-secondary")) idx++
-					assign(cursor, idx)
-				})
-
-				active_cursors.forEach(cursor => {
-					cursor.els.forEach(el => {
-						if (!el.isConnected) cursor.els = cursor.els.filter(e => e !== el)
-					})
-					if (cursor.els.length === 0) {
-						active_cursors = active_cursors.filter(c => c !== cursor)
+					const c = active_cursors.get(cursor)
+					if (!c) return
+					c.els = c.els.filter(el => el.isConnected)
+					if (c.els.length === 0) {
+						active_cursors.delete(cursor)
 						return
 					}
 
-					draw(cursor, ctx, ctr, delta)
+					draw(c, ctx, ctr, delta, cursor)
 				})
 
 				rr(stamp)
