@@ -148,7 +148,7 @@
 
 		const w = c.size.x, h = c.size.y
 		const dx = c.src.x - c.pos.x, dy = c.src.y - c.pos.y
-		const distance = Math.sqrt(dx * dx + dy * dy) || 1
+		const distance = Math.max(Math.sqrt(dx * dx + dy * dy) || 1, 1)
 
 		let points = [
 			{ x: c.pos.x, y: c.pos.y },
@@ -206,9 +206,11 @@
 
 	function draw(c, ctx, ctr, stamp, delta, cursor) {
 		const points = smear(c, delta)
+		const opacity = c.time > 0 ? 1 : easings['circ'](0.5 + 0.5 * sin((PI * stamp) / BLINK_INTERVAL));
 
 		ctx.save()
 		ctx.fillStyle = c.background
+		ctx.globalAlpha = opacity
 
 		ctx.beginPath()
 		ctx.moveTo(points[0].x, points[0].y)
@@ -216,8 +218,7 @@
 		ctx.closePath()
 		ctx.fill()
 		ctx.restore()
-		
-   		// const opacity = 0.5 + 0.5 * sin(stamp*PI/(1000*BLINK_INTERVAL));
+
 		c.els.forEach(el => {
 			if (!el.parentNode) return
 			if (!el.parentNode.classList.contains("cursor-block-style")) return
@@ -229,16 +230,15 @@
 			clone.style.zIndex = 2
 			clone.style.color = c.color
 			ctr.appendChild(clone)
-			
-			// el.style.opacity = opacity
-			// clone.style.opacity = opacity
+			el.style.opacity = opacity
+			clone.style.opacity = opacity
 		})
 
-		// ctx.save()
-		// ctx.fillStyle = "white"
-		// ctx.font = "12px monospace"
-		// ctx.fillText(c.anim_count, c.pos.x, c.pos.y - 4)
-		// ctx.restore()
+		ctx.save()
+		ctx.fillStyle = "white"
+		ctx.font = "12px monospace"
+		ctx.fillText(c.last_pos.x + "," + c.last_pos.y, c.pos.x, c.pos.y - 4)
+		ctx.restore()
 	}
 
 	function assign(cursor) {
