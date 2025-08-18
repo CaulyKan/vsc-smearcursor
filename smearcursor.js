@@ -234,11 +234,11 @@
 			clone.style.opacity = opacity
 		})
 
-		ctx.save()
-		ctx.fillStyle = "white"
-		ctx.font = "12px monospace"
-		ctx.fillText(c.last_pos.x + "," + c.last_pos.y, c.pos.x, c.pos.y - 4)
-		ctx.restore()
+		// ctx.save()
+		// ctx.fillStyle = "white"
+		// ctx.font = "12px monospace"
+		// ctx.fillText(c.last_pos.x + "," + c.last_pos.y, c.pos.x, c.pos.y - 4)
+		// ctx.restore()
 	}
 
 	function assign(cursor) {
